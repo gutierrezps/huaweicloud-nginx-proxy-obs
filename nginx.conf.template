@@ -1,0 +1,53 @@
+
+# Used only for debugging purposes
+log_format detailed escape=json
+    '{'
+        '"time":"$time_iso8601",'
+        '"remote_addr":"$remote_addr",'
+        '"request":"$request",'
+        '"request_method":"$request_method",'
+        '"request_uri":"$request_uri",'
+        '"status":$status,'
+        '"body_bytes_sent":$body_bytes_sent,'
+        '"http_host":"$http_host",'
+        '"user_agent":"$http_user_agent",'
+        '"request_headers":{'
+            '"host":"$http_host",'
+            '"user_agent":"$http_user_agent",'
+            '"authorization":"$http_authorization",'
+            '"content_type":"$http_content_type",'
+            '"content_length":"$http_content_length",'
+            '"x_amz_date":"$http_x_amz_date",'
+            '"x_amz_content_sha256":"$http_x_amz_content_sha256"'
+        '}'
+    '}';
+
+server {
+    listen 443 ssl;
+
+    server_name ${PROXY_DOMAIN};
+
+    # Enable only for debug purposes
+    # access_log /dev/stdout detailed;
+
+    ssl_certificate     /etc/nginx/certs/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/privkey.pem;
+
+    resolver ${RESOLVER_ADDRESS_1} ${RESOLVER_ADDRESS_2};
+
+    client_max_body_size 0;       # Removes the request body size limit
+    proxy_buffering off;          # Streams upstream responses to the client
+    proxy_request_buffering off;  # Streams uploads to the upstream
+
+    location = / {
+        proxy_pass https://${OBS_ENDPOINT};
+        proxy_set_header Host $proxy_host;
+        proxy_ssl_server_name on;
+    }
+
+    location ~ ^/([^/]+)/(.*)$ {
+        proxy_pass https://$1.${OBS_ENDPOINT}/$2$is_args$args;
+        proxy_set_header Host $proxy_host;
+        proxy_ssl_server_name on;
+    }
+}

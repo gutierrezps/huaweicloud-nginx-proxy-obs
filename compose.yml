@@ -1,0 +1,15 @@
+services:
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "443:443"
+    environment:
+      PROXY_DOMAIN: ${PROXY_DOMAIN}
+      RESOLVER_ADDRESS_1: ${RESOLVER_ADDRESS_1}
+      RESOLVER_ADDRESS_2: ${RESOLVER_ADDRESS_2}
+      OBS_ENDPOINT: ${OBS_ENDPOINT}
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ${CERT_FULLCHAIN_PEM}:/etc/nginx/certs/fullchain.pem:ro
+      - ${CERT_PRIVKEY_PEM}:/etc/nginx/certs/privkey.pem:ro
